@@ -1,0 +1,888 @@
+<title>業務員 AI 工作台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: iPad 橫向為主的 app shell — 左側導覽欄 + 主內容；窄螢幕改為底部導覽列 */
+:root{
+  --bg:#EDF1F0; --surface:#FFFFFF; --surface-2:#F5F8F7; --sunken:#E2E8E6;
+  --ink:#15252A; --muted:#58696E; --line:#D2DBD8;
+  --brand:#0E5961; --brand-ink:#FFFFFF; --brand-soft:#D7E9E8;
+  --accent:#B5661A; --accent-soft:#F5E5D0;
+  --ok:#2B7749; --ok-soft:#DAEEE1; --warn:#946410; --warn-soft:#F6EACB; --bad:#AB3434; --bad-soft:#F5DADA;
+  --shadow:0 1px 2px rgba(16,40,45,.06),0 6px 20px rgba(16,40,45,.07);
+  --f-body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-display:"Noto Serif TC","PingFang TC","Microsoft JhengHei",serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1618; --surface:#162126; --surface-2:#1B282D; --sunken:#0B1214;
+  --ink:#E3ECEA; --muted:#93A6AA; --line:#2A3B40;
+  --brand:#5DB2B8; --brand-ink:#08262A; --brand-soft:#173A3E;
+  --accent:#E29F4D; --accent-soft:#3A2A16;
+  --ok:#6BC28F; --ok-soft:#173326; --warn:#E0B65A; --warn-soft:#3A2F14; --bad:#E57A7A; --bad-soft:#3D1D1D;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1618; --surface:#162126; --surface-2:#1B282D; --sunken:#0B1214;
+  --ink:#E3ECEA; --muted:#93A6AA; --line:#2A3B40;
+  --brand:#5DB2B8; --brand-ink:#08262A; --brand-soft:#173A3E;
+  --accent:#E29F4D; --accent-soft:#3A2A16;
+  --ok:#6BC28F; --ok-soft:#173326; --warn:#E0B65A; --warn-soft:#3A2F14; --bad:#E57A7A; --bad-soft:#3D1D1D;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+h1,h2,h3{margin:0;text-wrap:balance}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.ic{flex:none}
+
+/* Shell */
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+.nav{background:var(--surface);border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:17px}
+.brand b{font-family:var(--f-display);font-size:16px;display:block;line-height:1.2}
+.brand small{color:var(--muted);font-size:12px}
+.nav ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.nav-btn{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border:0;border-radius:9px;background:none;color:var(--muted);font-weight:500;text-align:left;min-height:44px}
+.nav-btn:hover{background:var(--surface-2);color:var(--ink)}
+.nav-btn[aria-current="page"]{background:var(--brand-soft);color:var(--brand)}
+.nav-foot{margin-top:auto;font-size:12px;color:var(--muted);padding:0 8px}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);display:flex;align-items:center;gap:12px;padding:14px 28px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.topbar h1{font-family:var(--f-display);font-size:20px;margin-right:auto}
+.role{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.role select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);min-height:40px}
+.present-banner{background:var(--accent);color:var(--surface);padding:10px 28px;display:flex;align-items:center;gap:12px;font-weight:500;flex-wrap:wrap}
+.present-banner button{margin-left:auto;background:var(--surface);color:var(--accent);border:0;border-radius:7px;padding:6px 14px;font-weight:700}
+.content{padding:24px 28px 48px;display:flex;flex-direction:column;gap:20px;max-width:1280px;width:100%}
+.mock-note{font-size:12px;color:var(--muted)}
+
+/* Common */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:9px 16px;min-height:42px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--brand)}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.btn.primary:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:none;border-color:transparent;color:var(--brand)}
+.btn.small{min-height:34px;padding:5px 12px;font-size:13px}
+.btn.line{background:#06C755;border-color:#06C755;color:#fff}
+.link{background:none;border:0;color:var(--brand);font-weight:500;padding:4px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel-h h2{font-size:16px;margin-right:auto}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted)}
+.h1{font-family:var(--f-display);font-size:28px}
+.grid-2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:20px;min-width:0}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;padding:2px 9px;border-radius:999px;background:var(--sunken);color:var(--muted);white-space:nowrap}
+.pill.brand{background:var(--brand-soft);color:var(--brand)}
+.pill.accent{background:var(--accent-soft);color:var(--accent)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;min-height:36px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tag{font-size:12px;padding:2px 8px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.list li+li{border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:12px;width:100%;padding:10px 4px;background:none;border:0;text-align:left;min-height:52px}
+.row:hover .row-main b{color:var(--brand)}
+.row-main{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.row-main small{color:var(--muted);font-size:13px}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-weight:700;flex:none}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-size:12px;letter-spacing:.04em;color:var(--muted);font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.r,th.r{text-align:right}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.icon-btn{width:40px;height:40px;display:grid;place-items:center;border-radius:8px;border:0;background:none;color:var(--muted)}
+.icon-btn[aria-pressed="true"]{color:var(--accent)}
+.icon-btn[aria-pressed="true"] svg{fill:var(--accent)}
+
+/* Present mode */
+.present .sensitive{display:none!important}
+
+/* Home */
+.hello{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;justify-content:space-between}
+.todo-strip{display:flex;gap:10px;flex-wrap:wrap}
+.todo{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);min-height:52px}
+.todo-n{font-size:22px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.todo.warn .todo-n{color:var(--warn)} .todo.ok .todo-n{color:var(--ok)}
+.news-row{display:flex;flex-direction:column;gap:6px;padding:12px 0}
+.news-row+.news-row{border-top:1px solid var(--line)}
+.news-row h3{font-size:15px;font-weight:500}
+.angle{font-size:13px;background:var(--surface-2);border-left:3px solid var(--accent);padding:6px 10px;border-radius:0 6px 6px 0;color:var(--ink)}
+.angle b{color:var(--accent);font-weight:500;margin-right:6px}
+
+/* News */
+.news-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.news-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.news-card h3{font-size:17px;line-height:1.45}
+.news-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.news-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+.match{display:flex;align-items:center;gap:4px;margin-right:auto;font-size:12px;color:var(--muted)}
+.match .avatar{width:26px;height:26px;font-size:12px;margin-left:-6px;border:2px solid var(--surface)}
+.match .avatar:first-of-type{margin-left:0}
+.disclaim{font-size:12px;color:var(--warn)}
+
+/* Clients */
+.md{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
+.present .md{grid-template-columns:minmax(0,1fr)}
+.search{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);min-height:42px}
+.client-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.client-head .avatar{width:60px;height:60px;font-size:24px;font-family:var(--f-display)}
+.client-head h2{font-family:var(--f-display);font-size:24px}
+.client-actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.gaps{display:grid;gap:10px}
+.gap{display:grid;grid-template-columns:56px minmax(0,1fr) 72px;gap:12px;align-items:center;font-size:14px}
+.bar{height:12px;border-radius:6px;background:var(--sunken);position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:6px;background:var(--brand)}
+.bar i.after{background:repeating-linear-gradient(135deg,var(--accent) 0 5px,var(--accent-soft) 5px 9px)}
+.bar i.low{background:var(--bad)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:8px;border-radius:3px;display:inline-block;background:var(--brand)}
+.legend i.after{background:repeating-linear-gradient(135deg,var(--accent) 0 3px,var(--accent-soft) 3px 6px)}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.timeline li{display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;font-size:14px}
+.timeline time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+.note-box{background:var(--warn-soft);border-radius:8px;padding:10px 14px;font-size:14px}
+
+/* Proposal */
+.stepper{display:flex;gap:6px;list-style:none;margin:0;padding:0;overflow-x:auto}
+.stepper li{flex:1;min-width:120px}
+.step{width:100%;display:flex;flex-direction:column;gap:6px;background:none;border:0;padding:0;text-align:left;color:var(--muted);font-size:13px}
+.step::before{content:"";height:4px;border-radius:2px;background:var(--sunken)}
+.step.done{color:var(--ink)} .step.done::before{background:var(--brand)}
+.step.cur{color:var(--brand);font-weight:700} .step.cur::before{background:var(--accent)}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:28px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:var(--surface-2)}
+.file-chip{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.file-chip .ic{color:var(--bad)}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.field select,.field input{padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-height:42px;font-size:15px}
+.detect{display:flex;gap:10px;align-items:flex-start;font-size:14px;background:var(--ok-soft);color:var(--ink);padding:10px 14px;border-radius:8px}
+.detect .ic{color:var(--ok);margin-top:2px}
+.compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.doc{font-family:var(--f-body);font-size:14px;line-height:2;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:14px 16px;white-space:pre-wrap;word-break:break-all;min-width:0}
+.pii{background:var(--bad-soft);color:var(--bad);border-radius:3px;padding:0 3px}
+.tok{font-family:var(--f-mono);font-size:12px;background:var(--brand-soft);color:var(--brand);border-radius:3px;padding:1px 5px}
+.doc-h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;margin-bottom:6px;flex-wrap:wrap}
+.checks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.check{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.check b{font-size:20px;font-variant-numeric:tabular-nums}
+.check small{color:var(--muted);font-size:12px}
+.check.pass{background:var(--ok-soft);border-color:transparent} .check.pass b{color:var(--ok)}
+.stages{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.stages li{display:flex;align-items:center;gap:12px;font-size:15px}
+.dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);flex:none;color:var(--brand-ink)}
+.stages li.done .dot{background:var(--brand);border-color:var(--brand)}
+.stages li.run .dot{border-color:var(--accent);border-top-color:transparent;animation:spin 1s linear infinite}
+.stages li.wait{color:var(--muted)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.stages li.run .dot{animation:none;border-top-color:var(--accent)}}
+.fields td input{width:100%;min-width:180px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);min-height:38px}
+.fields tr.low td{background:var(--warn-soft)}
+.fields input[type=checkbox]{width:22px;height:22px;accent-color:var(--brand)}
+.fields .hint{font-size:12px;color:var(--warn);margin-top:4px}
+
+/* Simplified sheet */
+.sheet-wrap{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:20px;align-items:start}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:var(--shadow);padding:32px 36px;display:flex;flex-direction:column;gap:22px;min-width:0}
+.sheet-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:14px}
+.sheet-head h2{font-family:var(--f-display);font-size:26px;line-height:1.3}
+.sheet-head .prem{text-align:right}
+.sheet-head .prem b{font-size:26px;font-variant-numeric:tabular-nums;color:var(--brand)}
+.sec-t{font-family:var(--f-display);font-size:17px;display:flex;align-items:center;gap:8px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:4px;background:var(--surface-2)}
+.tile .ic{color:var(--brand)}
+.tile small{color:var(--muted);font-size:12px}
+.tile b{font-size:20px;font-variant-numeric:tabular-nums}
+.tile span{font-size:12px;color:var(--muted)}
+.scen{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.scen div{border-radius:8px;background:var(--brand-soft);padding:12px 14px;font-size:14px}
+.scen b{display:block;color:var(--brand);font-size:18px;font-variant-numeric:tabular-nums}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .prem{stroke:var(--accent);stroke-width:2.5;fill:none;stroke-dasharray:6 4}
+.chart .cv{stroke:var(--brand);stroke-width:2.5;fill:none}
+.chart .cv-area{fill:var(--brand-soft);stroke:none}
+.chart .lab-p{fill:var(--accent);font-weight:700;font-size:12px}
+.chart .lab-c{fill:var(--brand);font-weight:700;font-size:12px}
+.chart .pt-p{fill:var(--accent)} .chart .pt-c{fill:var(--brand)}
+.warnbox{border:1.5px solid var(--warn);border-radius:8px;padding:14px 16px;background:var(--warn-soft)}
+.warnbox ul{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.sheet-foot{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.side-actions{display:flex;flex-direction:column;gap:10px;position:sticky;top:90px}
+
+/* Needs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{border:0;background:none;padding:10px 16px;color:var(--muted);font-weight:500;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;min-height:44px}
+.tab[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand)}
+.profile{display:flex;gap:10px;flex-wrap:wrap}
+.profile div{background:var(--surface-2);border-radius:8px;padding:8px 12px;font-size:13px}
+.profile b{display:block;font-size:15px}
+.recs{display:flex;flex-direction:column;gap:12px}
+.rec{border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px}
+.rec h3{font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rec ul{margin:4px 0 0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:3px;grid-column:1/-1}
+.score{text-align:right}
+.score b{font-size:24px;color:var(--brand);font-variant-numeric:tabular-nums}
+.ai-label{font-size:11px;letter-spacing:.06em;color:var(--brand);grid-column:1/-1}
+.budget{display:flex;align-items:center;gap:12px;font-size:14px;flex-wrap:wrap}
+.phone{width:360px;max-width:100%;margin:0 auto;border:10px solid var(--ink);border-radius:36px;background:var(--surface);padding:22px 18px;display:flex;flex-direction:column;gap:14px}
+.phone h3{font-family:var(--f-display);font-size:19px}
+.phone .field{color:var(--ink);font-size:14px}
+.opt{display:flex;flex-wrap:wrap;gap:6px}
+.opt label{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;display:flex;align-items:center;gap:5px}
+.opt input{accent-color:var(--brand)}
+.consent{font-size:12px;background:var(--surface-2);border-radius:8px;padding:10px;display:flex;gap:8px;align-items:flex-start}
+.consent input{margin-top:3px;accent-color:var(--brand)}
+input[type=range]{accent-color:var(--brand);width:100%}
+
+/* Admin */
+.switch{width:46px;height:28px;border-radius:14px;border:0;background:var(--sunken);position:relative;flex:none}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
+.switch[aria-pressed="true"]{background:var(--brand)}
+.switch[aria-pressed="true"]::after{left:21px}
+.co-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.co{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px}
+.co-h{display:flex;align-items:center;gap:10px}
+.co-h b{margin-right:auto;font-size:16px}
+.co dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.co dt{color:var(--muted)} .co dd{margin:0;font-variant-numeric:tabular-nums}
+.co.off{opacity:.6}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.kpi small{color:var(--muted);font-size:12px}
+.kpi b{display:block;font-size:24px;font-variant-numeric:tabular-nums}
+.meter{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;min-width:100px}
+.meter i{display:block;height:100%;background:var(--brand)}
+.meter i.hi{background:var(--accent)}
+
+/* Overlay */
+.modal-bg{position:fixed;inset:0;background:rgba(10,20,22,.5);display:grid;place-items:center;padding:16px;z-index:20}
+.modal{background:var(--surface);border-radius:14px;max-width:440px;width:100%;padding:22px;display:flex;flex-direction:column;gap:14px;max-height:90vh;overflow:auto}
+.modal-h{display:flex;align-items:center}
+.modal-h h2{font-size:17px;margin-right:auto}
+.line-card{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.line-card .lc-top{background:var(--brand);color:var(--brand-ink);padding:14px 16px;font-family:var(--f-display);font-size:17px;line-height:1.45}
+.line-card .lc-body{padding:14px 16px;font-size:14px;display:flex;flex-direction:column;gap:8px}
+.line-card .lc-from{font-size:12px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
+
+/* Responsive */
+@media (max-width:1100px){
+  .app{grid-template-columns:76px minmax(0,1fr)}
+  .nav{padding:16px 10px}
+  .nav-btn{flex-direction:column;gap:4px;font-size:11px;padding:10px 4px;text-align:center}
+  .brand b,.brand small,.nav-foot{display:none}
+  .brand{justify-content:center;padding:0}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sheet-wrap{grid-template-columns:minmax(0,1fr)}
+  .side-actions{position:static;flex-direction:row;flex-wrap:wrap}
+  .checks{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .grid-2,.md,.compare,.news-grid{grid-template-columns:minmax(0,1fr)}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .nav{position:fixed;bottom:0;top:auto;left:0;right:0;height:auto;flex-direction:row;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line);z-index:10}
+  .nav .brand{display:none}
+  .nav ul{flex-direction:row;width:100%;justify-content:space-around}
+  .nav li{flex:1}
+  .content{padding:16px 16px 100px}
+  .topbar{padding:12px 16px}
+  .present-banner{padding:10px 16px}
+  .form-grid,.scen{grid-template-columns:minmax(0,1fr)}
+  .sheet{padding:20px 18px}
+  .tiles{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .toast{bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+}
+</style>
+
+<div class="app" id="app">
+  <nav class="nav" aria-label="主選單">
+    <div class="brand"><div class="brand-mark">保</div><div><b>業務員 AI 工作台</b><small>示範保經股份有限公司</small></div></div>
+    <ul id="navList"></ul>
+    <p class="nav-foot">原型示範 · 所有資料皆為虛構</p>
+  </nav>
+  <div class="main">
+    <div class="present-banner" id="presentBanner" hidden>
+      <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+      客戶展示模式：已隱藏佣金、內部備註、話術與其他客戶資料
+      <button data-act="present">結束展示</button>
+    </div>
+    <header class="topbar">
+      <h1 id="pageTitle">今日</h1>
+      <label class="role" for="roleSel">角色
+        <select id="roleSel">
+          <option value="agent">一般業務 · 林子晴</option>
+          <option value="admin">保經公司管理者</option>
+        </select>
+      </label>
+      <button class="btn" data-act="present" id="presentBtn"></button>
+    </header>
+    <main class="content" id="view"></main>
+  </div>
+</div>
+<div id="overlay"></div>
+
+<script>
+const I={
+ home:"M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
+ news:"M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2M7 9h7M7 13h7M7 17h4",
+ users:"M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM21 19v-1a4 4 0 0 0-3-3.8M15.5 3.2a3.5 3.5 0 0 1 0 6.6",
+ file:"M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h6",
+ clip:"M9 3h6v3H9zM9 4.5H6a1 1 0 0 0-1 1V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V5.5a1 1 0 0 0-1-1h-3M9 13l2 2 4-4",
+ box:"M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8",
+ building:"M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 10h4a1 1 0 0 1 1 1v10M3 21h18M8 8h3M8 12h3M8 16h3",
+ chart:"M4 20V10M10 20V4M16 20v-7M21 20H3",
+ eye:"M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+ share:"M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v12M7 8l5-5 5 5",
+ check:"M5 12l4 4 10-10",
+ star:"M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z",
+ lock:"M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3",
+ alert:"M12 4l9 16H3zM12 10v4M12 17v.5",
+ bed:"M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5M7 11.5a1.5 1.5 0 1 0 0-.01",
+ cut:"M6 6l12 12M6 18L18 6M5 6a1 1 0 1 0 2 0 1 1 0 1 0-2 0",
+ heart:"M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z",
+ shield:"M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z",
+ x:"M6 6l12 12M18 6L6 18",
+ send:"M21 3L10 14M21 3l-7 18-4-7-7-4z",
+ copy:"M8 8h12v12H8zM16 8V4H4v12h4"
+};
+const ic=(n,s=20)=>`<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${I[n]}"/></svg>`;
+const fmt=n=>n.toLocaleString('zh-TW');
+
+/* ---------- Mock data（全部為虛構） ---------- */
+const CLIENTS=[
+ {id:'c1',name:'王美玲',age:38,sex:'女',job:'國中教師',family:'已婚 · 2 子',tags:['健康','教育金','退休'],next:'寄送醫療險簡化說明',bday:'10/08',
+  policies:[{co:'甲安人壽',name:'安家定期壽險 20 年',prem:8900,st:'有效',fyc:2670},{co:'學校團保',name:'團體醫療',prem:0,st:'有效',fyc:0}],
+  gaps:[['醫療',30],['壽險',65],['重疾',10],['失能',20],['長照',0],['退休',40]],
+  log:[['10/02','LINE 分享「流感疫苗開打」，客戶回覆想了解小孩醫療'],['09/28','面談：討論醫療險升級，取得建議書'],['09/10','生日卡片提醒已設定']],
+  note:'先生為自營業，收入波動大；客戶在意保費不超過月薪 8%。'},
+ {id:'c2',name:'陳志豪',age:45,sex:'男',job:'半導體工程師',family:'已婚 · 1 女',tags:['投資','退休','節稅'],next:'討論美元利變型保單',
+  policies:[{co:'丙聯人壽',name:'穩健美元利率變動型終身壽',prem:120000,st:'有效',fyc:24000},{co:'丁和產險',name:'意外傷害實支',prem:2860,st:'有效',fyc:570}],
+  gaps:[['醫療',70],['壽險',90],['重疾',40],['失能',30],['長照',10],['退休',60]],
+  log:[['10/03','已發送需求問卷'],['09/15','討論匯率風險與資產配置']],note:'偏好美元資產，對匯率風險有概念。'},
+ {id:'c3',name:'林佳蓉',age:32,sex:'女',job:'產品經理',family:'已婚 · 新生兒',tags:['親子','健康'],next:'寶寶醫療險規劃',bday:'10/11',
+  policies:[{co:'乙泰人壽',name:'樂活一次金重大傷病',prem:12600,st:'有效',fyc:3150}],
+  gaps:[['醫療',40],['壽險',20],['重疾',70],['失能',10],['長照',0],['退休',15]],
+  log:[['10/04','問卷連結已開啟，尚未填寫']],note:'寶寶 9 月出生，想在滿月前規劃好。'},
+ {id:'c4',name:'張文雄',age:62,sex:'男',job:'退休公務員',family:'已婚 · 子女皆成年',tags:['長照','健康','傳承'],next:'長照險簡化說明已完成，約面談',
+  policies:[{co:'甲安人壽',name:'終身醫療（舊型）',prem:15600,st:'繳費期滿',fyc:0}],
+  gaps:[['醫療',50],['壽險',40],['重疾',20],['失能',10],['長照',5],['退休',85]],
+  log:[['10/01','長照險簡化說明產出完成'],['09/20','電話關心健康檢查結果']],note:'子女在國外，關心未來照護安排。'},
+ {id:'c5',name:'黃怡君',age:29,sex:'女',job:'平面設計師',family:'未婚',tags:['健康','旅遊'],next:'問卷已回覆，待媒合',
+  policies:[{co:'公司團保',name:'團體醫療',prem:0,st:'有效',fyc:0}],
+  gaps:[['醫療',20],['壽險',30],['重疾',0],['失能',0],['長照',0],['退休',10]],
+  log:[['10/05','完成需求問卷'],['09/30','分享「規律運動降低慢性病風險」']],note:'接案收入不穩，預算以月 3,000 元為上限。'},
+ {id:'c6',name:'李建國',age:51,sex:'男',job:'餐飲業負責人',family:'已婚 · 2 子',tags:['投資','傳承','企業'],next:'員工團保續約',
+  policies:[{co:'乙泰人壽',name:'安家定期壽險',prem:21000,st:'有效',fyc:5250}],
+  gaps:[['醫療',45],['壽險',70],['重疾',30],['失能',20],['長照',10],['退休',50]],
+  log:[['09/25','討論員工團保續約']],note:'公司 18 位員工，團保 11 月到期。'}
+];
+const NEWS=[
+ {id:'n1',cat:'健康',title:'流感疫苗本週起分批開打，長者與幼兒優先接種',src:'示範新聞網',time:'06:10',sum:'各地衛生單位公布接種時程，65 歲以上長者、幼兒及慢性病患者為第一階段對象，建議儘早預約。',angle:'問問客戶家中長輩與小孩的接種安排，順勢關心醫療與長照保障是否足夠。',tags:['健康','親子','長照']},
+ {id:'n2',cat:'健康',title:'研究：每週運動 150 分鐘，可降低多種慢性病風險',src:'示範健康誌',time:'05:40',sum:'大型追蹤研究顯示，規律中等強度運動與心血管疾病、第二型糖尿病風險下降有關。',angle:'可帶到「外溢保單」：運動達標可折減保費，適合年輕、愛運動的客戶。',tags:['健康']},
+ {id:'n3',cat:'投資',title:'主要央行利率決策出爐，市場關注美元走勢',src:'示範財經',time:'06:30',sum:'市場預期利率維持不變，美元指數小幅波動，分析師關注後續通膨數據。',angle:'適合和持有美元保單的客戶聊匯率風險觀念；只談觀念，不做買賣建議。',tags:['投資','退休'],invest:true},
+ {id:'n4',cat:'投資',title:'高股息 ETF 受益人數創新高，退休族群比重增加',src:'示範財經',time:'05:55',sum:'退休與屆退族群為主要增加來源，專家提醒留意配息來源與集中度風險。',angle:'聊退休現金流規劃，帶出「穩定給付」與「資產分散」的話題。',tags:['投資','退休'],invest:true},
+ {id:'n5',cat:'保險',title:'主管機關研議調整保險商品資訊揭露格式，要求更易讀',src:'示範保險報',time:'07:00',sum:'草案方向是以圖表與重點摘要呈現保障內容與費用，降低消費者閱讀門檻。',angle:'正好說明你提供「簡化說明書」的服務，強化專業形象。',tags:['健康','退休','投資']},
+ {id:'n6',cat:'保險',title:'長照需求人口持續增加，長照險詢問度明顯上升',src:'示範保險報',time:'06:45',sum:'家庭照護負擔增加，民眾開始比較長照險與類長照險的給付條件差異。',angle:'適合有長輩或自身接近退休的客戶，可先寄長照險簡化說明。',tags:['長照','退休','傳承']}
+];
+const JOBS=[
+ {cid:'c1',name:'王美玲',prod:'甲安人壽 · 安心守護終身醫療',st:['待你確認','warn'],step:4},
+ {cid:'c2',name:'陳志豪',prod:'丙聯人壽 · 穩健美元利變終身壽',st:['分析中','brand'],step:3},
+ {cid:'c4',name:'張文雄',prod:'甲安人壽 · 長照扶持終身健康',st:['已完成','ok'],step:5}
+];
+const FIELDS=[
+ {k:'保險公司',v:'甲安人壽',p:1,c:'高'},
+ {k:'商品名稱',v:'安心守護終身醫療健康保險',p:1,c:'高'},
+ {k:'年繳保費',v:'NT$ 28,560',p:2,c:'高'},
+ {k:'繳費年期',v:'20 年',p:2,c:'高'},
+ {k:'住院日額',v:'NT$ 2,000 / 日',p:5,c:'高'},
+ {k:'手術給付',v:'住院日額 × 5～50 倍',p:6,c:'中',hint:'倍數依手術項目表，AI 只取最低與最高'},
+ {k:'癌症一次金',v:'NT$ 300,000',p:12,c:'低',hint:'第 12 頁表格跨頁，請對照原文確認金額'},
+ {k:'等待期',v:'契約生效日起 30 日',p:15,c:'高'},
+ {k:'除外責任',v:'既往症、美容手術、故意行為等 6 項',p:17,c:'中',hint:'已整理成白話，請確認沒有遺漏'},
+ {k:'解約金表',v:'第 1～30 年，共 30 列',p:21,c:'高'}
+];
+const PRODUCTS=[
+ {co:'甲安人壽',name:'安心守護終身醫療',type:'醫療',st:'銷售中',ver:'2026.03',src:'系統匯入',star:true,note:'本季主推，可搭配實支附約'},
+ {co:'甲安人壽',name:'長照扶持終身健康',type:'長照',st:'銷售中',ver:'2025.11',src:'系統匯入',star:false,note:''},
+ {co:'乙泰人壽',name:'樂活一次金重大傷病',type:'重疾',st:'銷售中',ver:'2026.01',src:'手動建檔',star:true,note:'核保較寬鬆，適合有小病史'},
+ {co:'乙泰人壽',name:'安家定期壽險',type:'壽險',st:'停售',ver:'2023.07',src:'手動建檔',star:false,note:'10/1 起停售，舊件可查詢'},
+ {co:'丙聯人壽',name:'穩健美元利率變動型終身壽',type:'壽險',st:'改版',ver:'2026.11',src:'系統匯入',star:false,note:'11/1 起宣告利率調整，月底前送件'},
+ {co:'丙聯人壽',name:'幸福失能扶助',type:'失能',st:'銷售中',ver:'2025.08',src:'手動建檔',star:false,note:''},
+ {co:'丁和產險',name:'意外傷害實支',type:'意外',st:'銷售中',ver:'2026.05',src:'系統匯入',star:false,note:'一年期，可線上投保'}
+];
+const PARTNERS=[
+ {co:'甲安人壽',on:true,n:42,exp:'2027/06',sync:'每日自動'},
+ {co:'乙泰人壽',on:true,n:35,exp:'2026/12',sync:'手動建檔'},
+ {co:'丙聯人壽',on:true,n:28,exp:'2027/03',sync:'每日自動'},
+ {co:'丁和產險',on:true,n:16,exp:'2027/01',sync:'每週自動'},
+ {co:'戊豐人壽',on:false,n:31,exp:'—',sync:'—'}
+];
+const TEAM=[
+ {name:'林子晴',clients:86,prop:18,q:9,ai:62},
+ {name:'周承翰',clients:124,prop:31,q:14,ai:88},
+ {name:'吳雅婷',clients:57,prop:9,q:5,ai:30},
+ {name:'蔡明哲',clients:73,prop:12,q:7,ai:41}
+];
+const RECS=[
+ {co:'甲安人壽',name:'安心守護終身醫療',prem:18240,score:92,star:true,fyc:4560,why:['目前只有公司團保，離職或轉為接案後醫療保障就會中斷','29 歲投保終身型，保費比 35 歲投保低約 18%','年繳約占預算 51%，保留空間給意外險']},
+ {co:'丁和產險',name:'意外傷害實支',prem:2860,score:88,star:false,fyc:570,why:['問卷提到常外出拍攝、每年出國 2 次，意外風險較高','保費低，可補足意外醫療的實支給付']},
+ {co:'乙泰人壽',name:'樂活一次金重大傷病',prem:12600,score:76,star:true,fyc:3150,why:['問卷勾選「擔心生重病無法工作」','三張合計會超出預算約 NT$ 3,700 / 年，可改選 20 萬保額']}
+];
+
+/* ---------- State ---------- */
+const state={role:'agent',view:'home',clientId:'c1',present:false,newsCat:'全部',step:1,stage:0,confirmed:new Set(FIELDS.map((f,i)=>f.c==='高'?i:-1).filter(i=>i>=0)),needsTab:'result',prodFilter:'全部',clientQ:''};
+const NAV={
+ agent:[['home','今日','home'],['news','新聞彙整','news'],['clients','客戶','users'],['proposal','建議書簡化','file'],['needs','需求與媒合','clip']],
+ admin:[['products','商品庫','box'],['partners','合作保險公司','building'],['team','業務員與用量','chart']]
+};
+let stageTimer=null;
+
+/* ---------- Views ---------- */
+const V={};
+const avatar=c=>`<span class="avatar">${c.name[0]}</span>`;
+const byId=id=>CLIENTS.find(c=>c.id===id);
+const matchClients=n=>CLIENTS.filter(c=>c.tags.some(t=>n.tags.includes(t)));
+
+V.home=()=>`
+<section class="hello">
+  <div><p class="eyebrow">2026 年 10 月 6 日 星期二</p><h2 class="h1">早安，子晴</h2></div>
+  <div class="todo-strip">
+    <button class="todo" data-act="client" data-id="c1"><span class="todo-n">2</span><span>位客戶本週生日</span></button>
+    <button class="todo warn" data-act="go" data-v="proposal" data-step="4"><span class="todo-n">1</span><span>份建議書待確認</span></button>
+    <button class="todo ok" data-act="go" data-v="needs"><span class="todo-n">1</span><span>份問卷已回覆</span></button>
+  </div>
+</section>
+<div class="grid-2">
+  <section class="panel">
+    <header class="panel-h"><h2>今日新聞</h2><span class="mock-note">06:00 自動彙整</span><button class="link" data-act="go" data-v="news">全部 ${NEWS.length} 則</button></header>
+    <div>${NEWS.slice(0,3).map(n=>`
+      <article class="news-row">
+        <div class="news-meta"><span class="pill ${catCls(n.cat)}">${n.cat}</span>${n.src} · ${n.time}</div>
+        <h3>${n.title}</h3>
+        <p class="angle sensitive"><b>聊天切入點</b>${n.angle}</p>
+      </article>`).join('')}</div>
+  </section>
+  <div class="stack">
+    <section class="panel sensitive">
+      <header class="panel-h"><h2>待追蹤客戶</h2></header>
+      <ul class="list">${CLIENTS.slice(0,5).map(c=>`<li><button class="row" data-act="client" data-id="${c.id}">${avatar(c)}<span class="row-main"><b>${c.name}</b><small>${c.next}</small></span>${c.bday?`<span class="pill accent">${c.bday} 生日</span>`:''}</button></li>`).join('')}</ul>
+    </section>
+    <section class="panel sensitive">
+      <header class="panel-h"><h2>建議書處理進度</h2></header>
+      <ul class="list">${JOBS.map(j=>`<li><button class="row" data-act="go" data-v="proposal" data-step="${j.step}"><span class="row-main"><b>${j.name}</b><small>${j.prod}</small></span><span class="pill ${j.st[1]}">${j.st[0]}</span></button></li>`).join('')}</ul>
+    </section>
+  </div>
+</div>`;
+
+function catCls(c){return c==='健康'?'ok':c==='投資'?'accent':'brand'}
+
+V.news=()=>{
+ const cats=['全部','健康','投資','保險'];
+ const list=NEWS.filter(n=>state.newsCat==='全部'||n.cat===state.newsCat);
+ return `
+<div class="panel-h">
+  <div class="chips" role="group" aria-label="新聞分類">${cats.map(c=>`<button class="chip" data-act="newsCat" data-c="${c}" aria-pressed="${state.newsCat===c}">${c}</button>`).join('')}</div>
+  <span class="mock-note" style="margin-left:auto">新聞為示範內容 · 僅保留摘要與原文連結</span>
+</div>
+<div class="news-grid">${list.map(n=>{const m=matchClients(n);return `
+  <article class="news-card">
+    <div class="news-meta"><span class="pill ${catCls(n.cat)}">${n.cat}</span>${n.src} · 今日 ${n.time}</div>
+    <h3>${n.title}</h3>
+    <p class="small muted">${n.sum}</p>
+    <p class="angle sensitive"><b>聊天切入點</b>${n.angle}</p>
+    ${n.invest?'<p class="disclaim">分享給客戶時會自動附上「僅供參考，非投資建議」</p>':''}
+    <div class="news-foot">
+      <span class="match sensitive">${m.slice(0,4).map(avatar).join('')}<span>&nbsp;${m.length} 位客戶可能感興趣</span></span>
+      <button class="btn small" data-act="newsPreview" data-id="${n.id}">${ic('eye',16)}客戶版</button>
+      <button class="btn small line" data-act="toast" data-msg="示範：開啟 LINE 分享，並記錄到客戶互動紀錄">${ic('share',16)}LINE</button>
+    </div>
+  </article>`}).join('')}</div>`;
+};
+
+V.clients=()=>{
+ const c=byId(state.clientId);
+ const q=state.clientQ.trim();
+ const list=CLIENTS.filter(x=>!q||x.name.includes(q)||x.tags.some(t=>t.includes(q)));
+ return `
+<div class="md">
+  <section class="panel sensitive">
+    <input class="search" id="clientSearch" type="search" placeholder="搜尋姓名或標籤" value="${q}" aria-label="搜尋客戶">
+    <ul class="list">${list.map(x=>`<li><button class="row" data-act="client" data-id="${x.id}" ${x.id===c.id?'aria-current="true"':''}>${avatar(x)}<span class="row-main"><b ${x.id===c.id?'style="color:var(--brand)"':''}>${x.name}</b><small>${x.age} 歲 · ${x.job}</small></span></button></li>`).join('')}</ul>
+  </section>
+  <div class="stack">
+    <section class="panel">
+      <div class="client-head">
+        ${avatar(c)}
+        <div><h2>${c.name}</h2><p class="muted small">${c.age} 歲 · ${c.sex} · ${c.job} · ${c.family}</p>
+          <div class="chips" style="margin-top:6px">${c.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div></div>
+        <div class="client-actions sensitive">
+          <button class="btn small" data-act="go" data-v="needs" data-tab="list">${ic('send',16)}發送需求問卷</button>
+          <button class="btn small primary" data-act="go" data-v="proposal" data-step="1">${ic('file',16)}上傳建議書</button>
+        </div>
+      </div>
+    </section>
+    <section class="panel">
+      <header class="panel-h"><h2>已有保單</h2><span class="mock-note">${c.policies.length} 張</span></header>
+      <div class="table-wrap"><table>
+        <thead><tr><th>保險公司</th><th>商品</th><th class="r">年繳保費</th><th>狀態</th><th class="r sensitive">預估佣金</th></tr></thead>
+        <tbody>${c.policies.map(p=>`<tr><td>${p.co}</td><td>${p.name}</td><td class="r num">${p.prem?fmt(p.prem):'—'}</td><td><span class="pill ${p.st==='有效'?'ok':''}">${p.st}</span></td><td class="r num sensitive">${p.fyc?fmt(p.fyc):'—'}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </section>
+    <div class="grid-2">
+      <section class="panel">
+        <header class="panel-h"><h2>保障完整度</h2><span class="mock-note">依問卷與已有保單估算</span></header>
+        <div class="gaps">${c.gaps.map(([k,v])=>`<div class="gap"><span>${k}</span><div class="bar"><i class="${v<25?'low':''}" style="width:${v}%"></i></div><span class="num small ${v<25?'':'muted'}" style="${v<25?'color:var(--bad)':''}">${v}%${v<25?' 不足':''}</span></div>`).join('')}</div>
+      </section>
+      <section class="panel">
+        <header class="panel-h"><h2>互動紀錄</h2></header>
+        <ul class="timeline">${c.log.map(([d,t])=>`<li><time>2026/${d}</time><span>${t}</span></li>`).join('')}</ul>
+        <div class="note-box sensitive"><b>內部備註</b>　${c.note}</div>
+      </section>
+    </div>
+  </div>
+</div>`;
+};
+
+/* Proposal */
+const STEPS=['上傳與指定客戶','去識別化','AI 分析','逐欄確認','簡化圖卡'];
+V.proposal=()=>{
+ const s=state.step;
+ return `
+<ol class="stepper">${STEPS.map((t,i)=>`<li><button class="step ${i+1<s?'done':i+1===s?'cur':''}" data-act="step" data-s="${i+1}" ${i+1>s?'disabled':''}>${i+1}. ${t}</button></li>`).join('')}</ol>
+${[null,P1,P2,P3,P4,P5][s]()}`;
+};
+function P1(){return `
+<section class="panel">
+  <header class="panel-h"><h2>上傳建議書 PDF</h2></header>
+  <div class="drop">
+    <div class="file-chip">${ic('file',28)}<div><b>建議書_甲安人壽_安心守護.pdf</b><p class="small muted">24 頁 · 3.2 MB · 已上傳</p></div></div>
+    <p class="small muted">從保險公司系統下載的建議書直接拖曳到這裡，或點選選擇檔案。檔案加密存放，不會原檔外傳。</p>
+  </div>
+  <div class="form-grid">
+    <label class="field" for="pCust">這份建議書屬於哪位客戶
+      <select id="pCust">${CLIENTS.map(c=>`<option ${c.id==='c1'?'selected':''}>${c.name}（${c.age} 歲）</option>`).join('')}</select></label>
+    <label class="field" for="pType">建議書類型
+      <select id="pType"><option>新契約建議書</option><option>保單健診（既有保單）</option></select></label>
+  </div>
+  <p class="detect">${ic('check',18)}<span>已辨識：<b>甲安人壽</b> 建議書格式 2026.03 版，系統已有此版本範本（過去 41 份確認紀錄），辨識準確度較高。</span></p>
+  <div><button class="btn primary" data-act="step" data-s="2">下一步：去識別化</button></div>
+</section>`}
+
+function P2(){return `
+<section class="panel">
+  <header class="panel-h"><h2>去識別化檢查</h2><span class="pill ok">${ic('lock',14)}在本平台伺服器處理</span></header>
+  <div class="checks">
+    <div class="check"><b>4</b><small>精準比對（客戶資料）</small></div>
+    <div class="check"><b>2</b><small>格式比對（證號、電話）</small></div>
+    <div class="check"><b>3</b><small>欄位比對（受益人等）</small></div>
+    <div class="check pass"><b>通過</b><small>送出前安全檢查</small></div>
+  </div>
+  <div class="compare">
+    <div><p class="doc-h">${ic('lock',16)}原文（只留在本平台）</p>
+<div class="doc">要保人：<span class="pii">王美玲</span>　身分證字號：<span class="pii">A223456789</span>
+被保險人：<span class="pii">王美玲</span>　出生日期：<span class="pii">1988/03/21</span>　性別：女
+聯絡電話：<span class="pii">0912-345-678</span>
+受益人：<span class="pii">陳俊宏</span>（配偶）
+業務員：<span class="pii">林子晴</span>　登錄字號：<span class="pii">0123456</span>
+商品：安心守護終身醫療健康保險
+年繳保費：28,560 元　繳費年期：20 年
+住院日額：2,000 元</div></div>
+    <div><p class="doc-h">${ic('send',16)}實際送給 AI 的內容</p>
+<div class="doc">要保人：<span class="tok">[要保人]</span>　身分證字號：<span class="tok">[已移除]</span>
+被保險人：<span class="tok">[被保險人]</span>　投保年齡：38 歲　性別：女
+聯絡電話：<span class="tok">[已移除]</span>
+受益人：<span class="tok">[受益人1]</span>（配偶）
+業務員：<span class="tok">[業務員]</span>　登錄字號：<span class="tok">[已移除]</span>
+商品：安心守護終身醫療健康保險
+年繳保費：28,560 元　繳費年期：20 年
+住院日額：2,000 元</div></div>
+  </div>
+  <p class="small muted">只送出擷取後的文字與表格，不送頁面圖片。分析結果回來後，代號會在本平台換回真實姓名。</p>
+  <div><button class="btn primary" data-act="step" data-s="3">確認並送出分析</button></div>
+</section>`}
+
+const STAGES=['擷取 PDF 文字與表格（本平台）','整理成統一欄位格式','條款改寫為白話說明','數字與原文交叉比對'];
+function P3(){const k=state.stage;return `
+<section class="panel">
+  <header class="panel-h"><h2>AI 分析中</h2><span class="mock-note">通常 30～60 秒，完成會通知你</span></header>
+  <ul class="stages">${STAGES.map((t,i)=>`<li class="${i<k?'done':i===k?'run':'wait'}"><span class="dot">${i<k?ic('check',14):''}</span>${t}</li>`).join('')}</ul>
+  <div><button class="btn primary" data-act="step" data-s="4" ${k<STAGES.length?'disabled':''}>前往逐欄確認</button></div>
+</section>`}
+
+function P4(){const all=state.confirmed.size===FIELDS.length;return `
+<section class="panel">
+  <header class="panel-h"><h2>逐欄確認</h2><span class="mock-note">已確認 ${state.confirmed.size} / ${FIELDS.length}</span>
+    <button class="btn small" data-act="toast" data-msg="示範：在右側開啟 PDF 原文對照">對照原文</button></header>
+  <p class="small muted">數字欄位由程式從 PDF 擷取，AI 只負責整理與白話化。每一欄都要由你確認後，才能產生給客戶看的圖卡。</p>
+  <div class="table-wrap"><table class="fields">
+    <thead><tr><th>欄位</th><th>擷取結果（可修改）</th><th>來源</th><th>信心</th><th>確認</th></tr></thead>
+    <tbody>${FIELDS.map((f,i)=>`<tr class="${f.c==='低'?'low':''}">
+      <td><b>${f.k}</b></td>
+      <td><input id="fv${i}" value="${f.v}" aria-label="${f.k}">${f.hint?`<p class="hint">${f.hint}</p>`:''}</td>
+      <td class="num muted">第 ${f.p} 頁</td>
+      <td><span class="pill ${f.c==='高'?'ok':f.c==='中'?'warn':'bad'}">${f.c}</span></td>
+      <td><input type="checkbox" id="fc${i}" data-act="confirm" data-i="${i}" ${state.confirmed.has(i)?'checked':''} aria-label="確認${f.k}"></td></tr>`).join('')}</tbody>
+  </table></div>
+  <div class="panel-h"><button class="btn primary" data-act="step" data-s="5" ${all?'':'disabled'}>產生簡化圖卡</button>${all?'':'<span class="small" style="color:var(--warn)">還有欄位未確認</span>'}</div>
+</section>`}
+
+function cvChart(){
+ const W=620,H=250,L=48,R=20,T=24,B=34,max=600000;
+ const x=y=>L+(y-1)/29*(W-L-R), Y=v=>T+(1-v/max)*(H-T-B);
+ const prem=y=>28560*Math.min(y,20);
+ const cv=y=>y<=20?Math.round(28560*y*Math.min(.85,.15+.035*y)):Math.round(485520+(y-20)*4000);
+ const yrs=[...Array(30)].map((_,i)=>i+1);
+ const pl=yrs.map(y=>`${x(y).toFixed(1)},${Y(prem(y)).toFixed(1)}`).join(' ');
+ const cl=yrs.map(y=>`${x(y).toFixed(1)},${Y(cv(y)).toFixed(1)}`).join(' ');
+ const area=`${x(1)},${Y(0)} ${cl} ${x(30)},${Y(0)}`;
+ const grid=[0,200000,400000,600000].map(v=>`<line class="grid" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end">${v?v/10000+' 萬':'0'}</text>`).join('');
+ const xt=[1,5,10,15,20,25,30].map(y=>`<text x="${x(y)}" y="${H-12}" text-anchor="middle">第 ${y} 年</text>`).join('');
+ return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="累積已繳保費與解約金走勢：第 20 年已繳 57.1 萬，解約金約 48.6 萬">
+  ${grid}${xt}
+  <polygon class="cv-area" points="${area}"/>
+  <polyline class="prem" points="${pl}"/>
+  <polyline class="cv" points="${cl}"/>
+  <circle class="pt-p" cx="${x(20)}" cy="${Y(prem(20))}" r="4.5"/><circle class="pt-c" cx="${x(20)}" cy="${Y(cv(20))}" r="4.5"/>
+  <text class="lab-p" x="${x(20)-8}" y="${Y(prem(20))-10}" text-anchor="end">已繳 57.1 萬</text>
+  <text class="lab-c" x="${x(20)+8}" y="${Y(cv(20))+18}">解約金約 48.6 萬</text>
+ </svg>`;
+}
+
+function P5(){return `
+<div class="sheet-wrap">
+  <article class="sheet" aria-label="簡化保障說明">
+    <header class="sheet-head">
+      <div><p class="eyebrow">王美玲 小姐的保障重點</p><h2>安心守護終身醫療健康保險</h2><p class="small muted">甲安人壽 · 終身保障 · 繳費 20 年</p></div>
+      <div class="prem"><p class="small muted">年繳保費</p><b>NT$ 28,560</b><p class="small muted">約每月 2,380 元</p></div>
+    </header>
+    <section><h3 class="sec-t">${ic('shield',18)}可以領到什麼</h3></section>
+    <div class="tiles">
+      <div class="tile">${ic('bed',22)}<small>住院</small><b>2,000</b><span>元 / 每日</span></div>
+      <div class="tile">${ic('cut',22)}<small>手術</small><b>1～10 萬</b><span>依手術項目 5～50 倍</span></div>
+      <div class="tile">${ic('heart',22)}<small>癌症確診</small><b>30 萬</b><span>一次給付</span></div>
+      <div class="tile">${ic('shield',22)}<small>保障期間</small><b>終身</b><span>繳 20 年，保一輩子</span></div>
+    </div>
+    <section><h3 class="sec-t">${ic('check',18)}舉個例子</h3></section>
+    <div class="scen">
+      <div>住院 5 天，做一般手術（10 倍）<b>約可領 NT$ 30,000</b></div>
+      <div>第一次確診癌症，住院 10 天<b>約可領 NT$ 320,000</b></div>
+    </div>
+    <section><h3 class="sec-t">${ic('chart',18)}繳了多少、解約能拿回多少</h3>
+      <div class="legend" style="margin:8px 0"><span><i style="background:var(--accent)"></i>累積已繳保費</span><span><i></i>解約金</span></div>
+      ${cvChart()}
+      <p class="small muted">這張保單的重點是醫療保障，不是儲蓄。提早解約拿回的錢會少於已繳保費。</p>
+    </section>
+    <section class="warnbox">
+      <h3 class="sec-t" style="color:var(--warn)">${ic('alert',18)}一定要知道的事</h3>
+      <ul>
+        <li>契約生效後 <b>30 天內</b> 發生的疾病住院不理賠（等待期）。</li>
+        <li>投保前已有的疾病（既往症）、美容手術、故意行為等 <b>6 種情況不理賠</b>。</li>
+        <li>前 10 年解約，可領回的金額不到已繳保費的一半。</li>
+        <li>住院日額為定額給付，不是實支實付，自費項目需另外規劃。</li>
+      </ul>
+    </section>
+    <footer class="sheet-foot"><span>本說明為重點摘要，實際權利義務以甲安人壽正式建議書及保單條款為準。</span><span>業務員 林子晴 · 示範保經</span></footer>
+  </article>
+  <aside class="side-actions">
+    <button class="btn line" data-act="toast" data-msg="示範：以圖片傳送到 LINE，並記錄到王美玲的互動紀錄">${ic('share',18)}分享到 LINE</button>
+    <button class="btn" data-act="toast" data-msg="示範：產生 A4 兩頁 PDF">${ic('file',18)}輸出 PDF</button>
+    <button class="btn" data-act="present">${ic('eye',18)}展示模式給客戶看</button>
+    <button class="btn ghost" data-act="step" data-s="4">返回修改欄位</button>
+    <p class="small muted">分享前會依公司設定送主管或文宣審核。</p>
+  </aside>
+</div>`}
+
+/* Needs */
+V.needs=()=>{
+ const tabs=[['list','問卷狀態'],['result','媒合結果 · 黃怡君'],['form','客戶端畫面']];
+ return `
+<div class="tabs" role="tablist">${tabs.map(([k,t])=>`<button class="tab" role="tab" data-act="needsTab" data-t="${k}" aria-selected="${state.needsTab===k}">${t}</button>`).join('')}</div>
+${{list:N1,result:N2,form:N3}[state.needsTab]()}`;
+};
+function N1(){const rows=[['黃怡君','已回覆','ok','10/05 21:14'],['林佳蓉','已開啟未完成','warn','10/04 開啟'],['陳志豪','已發送','brand','10/03 發送'],['李建國','未發送','','—']];return `
+<section class="panel">
+  <header class="panel-h"><h2>需求問卷</h2><button class="btn small primary" data-act="toast" data-msg="示範：產生專屬連結並用 LINE 傳給客戶">${ic('send',16)}發送新問卷</button></header>
+  <div class="table-wrap"><table><thead><tr><th>客戶</th><th>狀態</th><th>時間</th><th></th></tr></thead>
+  <tbody>${rows.map(r=>`<tr><td><b>${r[0]}</b></td><td><span class="pill ${r[2]}">${r[1]}</span></td><td class="num muted">${r[3]}</td><td class="r">${r[1]==='已回覆'?'<button class="btn small" data-act="needsTab" data-t="result">查看媒合</button>':r[1]==='未發送'?'<button class="btn small" data-act="toast" data-msg="示範：已傳送問卷連結">發送</button>':'<button class="btn small ghost" data-act="toast" data-msg="示範：已傳送提醒">提醒</button>'}</td></tr>`).join('')}</tbody></table></div>
+  <p class="small muted">問卷連結 7 天內有效，客戶不需註冊。健康相關問題需客戶勾選同意後才會出現。</p>
+</section>`}
+function N2(){
+ const g=[['醫療',20,85],['意外',10,80],['重疾',0,60],['壽險',30,30],['失能',0,0],['長照',0,0]];
+ const tot=RECS.reduce((a,r)=>a+r.prem,0);
+ return `
+<section class="panel">
+  <header class="panel-h"><h2>黃怡君的需求摘要</h2><span class="mock-note">10/05 填寫</span></header>
+  <div class="profile">
+    <div><small class="muted">年齡</small><b>29 歲</b></div><div><small class="muted">家庭</small><b>未婚 · 無扶養</b></div>
+    <div><small class="muted">年收入</small><b>約 70 萬</b></div><div><small class="muted">保費預算</small><b>月 3,000 元</b></div>
+    <div><small class="muted">最擔心</small><b>醫療、意外、重病</b></div>
+  </div>
+</section>
+<div class="grid-2">
+  <section class="panel">
+    <header class="panel-h"><h2>推薦組合</h2><span class="mock-note">規則篩選 128 → 9 → 3 項 · AI 撰寫推薦理由</span></header>
+    <div class="recs">${RECS.map(r=>`<div class="rec">
+      <div><h3>${r.name}${r.star?`<span class="pill accent sensitive">${ic('star',12)}主推</span>`:''}</h3><p class="small muted">${r.co} · 年繳約 NT$ ${fmt(r.prem)}<span class="sensitive"> · 預估佣金 ${fmt(r.fyc)}</span></p></div>
+      <div class="score"><b>${r.score}</b><small class="muted">%</small><p class="small muted">匹配度</p></div>
+      <p class="ai-label">為什麼適合（AI 說明）</p>
+      <ul>${r.why.map(w=>`<li>${w}</li>`).join('')}</ul></div>`).join('')}</div>
+    <div class="budget"><span>三項合計 <b class="num">NT$ ${fmt(tot)}</b> / 年</span><span class="pill warn">超出預算 NT$ ${fmt(tot-36000)}</span><button class="btn small" data-act="toast" data-msg="示範：重新計算，改為重大傷病 20 萬保額">調整到預算內</button></div>
+  </section>
+  <section class="panel">
+    <header class="panel-h"><h2>加入推薦後的保障</h2></header>
+    <div class="legend"><span><i></i>目前已有</span><span><i class="after"></i>加入推薦後</span></div>
+    <div class="gaps">${g.map(([k,a,b])=>`<div class="gap"><span>${k}</span><div class="bar"><i class="after" style="width:${b}%"></i><i style="width:${a}%"></i></div><span class="num small muted">${a}% → ${b}%</span></div>`).join('')}</div>
+    <p class="small muted">壽險、失能、長照目前優先度較低（無扶養責任、年紀輕），建議 3～5 年後再檢視。</p>
+    <button class="btn primary" data-act="toast" data-msg="示範：產生三項商品的比較圖卡">產生給客戶的比較說明</button>
+  </section>
+</div>`}
+function N3(){return `
+<p class="small muted" style="text-align:center">客戶用手機開啟專屬連結看到的畫面（不需登入）</p>
+<form class="phone" id="custForm">
+  <div><p class="eyebrow">林子晴 · 示範保經</p><h3>花 3 分鐘，幫你找出保障缺口</h3></div>
+  <label class="field" for="qAge">年齡<select id="qAge"><option>25～29 歲</option><option>30～39 歲</option><option>40～49 歲</option><option>50 歲以上</option></select></label>
+  <label class="field" for="qFam">家庭狀況<select id="qFam"><option>未婚</option><option>已婚無子女</option><option>已婚有子女</option></select></label>
+  <div class="field">最擔心的事（可複選）<div class="opt">
+    ${['生病住院','意外受傷','生重病無法工作','退休金不夠','家人生活','長期照護'].map((t,i)=>`<label for="qw${i}"><input type="checkbox" id="qw${i}" ${i<3?'checked':''}>${t}</label>`).join('')}</div></div>
+  <label class="field" for="qBud">每月可以放在保險的預算：<b id="qBudV">3,000</b> 元<input type="range" id="qBud" min="1000" max="10000" step="500" value="3000"></label>
+  <label class="consent" for="qConsent"><input type="checkbox" id="qConsent" checked><span>我同意業務員蒐集我的健康相關資料，僅用於保險規劃，可隨時要求刪除。（個資法特種個資同意）</span></label>
+  <button class="btn primary" type="submit">送出</button>
+</form>`}
+
+/* Admin */
+V.products=()=>{
+ const fs=['全部','銷售中','改版','停售'];
+ const list=PRODUCTS.filter(p=>state.prodFilter==='全部'||p.st===state.prodFilter);
+ return `
+<section class="panel">
+  <header class="panel-h"><div class="chips">${fs.map(f=>`<button class="chip" data-act="prodFilter" data-f="${f}" aria-pressed="${state.prodFilter===f}">${f}</button>`).join('')}</div>
+    <button class="btn small" data-act="toast" data-msg="示範：選擇匯入來源（Excel 範本 / 保險公司資料檔）並設定欄位對應" style="margin-left:auto">匯入商品</button>
+    <button class="btn small primary" data-act="toast" data-msg="示範：開啟手動建檔表單">手動建檔</button></header>
+  <div class="table-wrap"><table>
+    <thead><tr><th>主推</th><th>保險公司</th><th>商品</th><th>類型</th><th>狀態</th><th>版本</th><th>來源</th><th class="sensitive">內部備註</th></tr></thead>
+    <tbody>${list.map(p=>{const i=PRODUCTS.indexOf(p);return `<tr>
+      <td><button class="icon-btn" data-act="star" data-i="${i}" aria-pressed="${p.star}" aria-label="設為主推">${ic('star',20)}</button></td>
+      <td>${p.co}</td><td><b>${p.name}</b></td><td>${p.type}</td>
+      <td><span class="pill ${p.st==='銷售中'?'ok':p.st==='改版'?'warn':''}">${p.st}</span></td>
+      <td class="num muted">${p.ver}</td><td class="small muted">${p.src}</td><td class="small sensitive">${p.note||'<span class="muted">—</span>'}</td></tr>`}).join('')}</tbody>
+  </table></div>
+  <p class="small muted">商品基本資料由平台共用；「主推」與「內部備註」只有貴公司的業務員看得到。停售商品保留舊版條款，供既有客戶查詢。</p>
+</section>`;
+};
+V.partners=()=>`
+<p class="small muted">關閉合作後，該公司商品不會出現在業務員的媒合結果中；既有客戶的保單資料不受影響。</p>
+<div class="co-grid">${PARTNERS.map((p,i)=>`
+  <article class="co ${p.on?'':'off'}">
+    <div class="co-h">${ic('building',22)}<b>${p.co}</b><button class="switch" data-act="partner" data-i="${i}" aria-pressed="${p.on}" aria-label="${p.co} 合作中"></button></div>
+    <dl><dt>上架商品</dt><dd>${p.n} 項</dd><dt>合約到期</dt><dd>${p.exp}</dd><dt>資料更新</dt><dd>${p.sync}</dd></dl>
+  </article>`).join('')}</div>`;
+V.team=()=>{
+ const used=TEAM.reduce((a,t)=>a+t.prop,0);
+ return `
+<div class="kpis">
+  <div class="kpi"><small>訂閱方案</small><b>專業版</b><span class="small muted">10 席，已用 4 席</span></div>
+  <div class="kpi"><small>本月建議書分析</small><b>${used} / 300</b><div class="meter"><i style="width:${used/3}%"></i></div></div>
+  <div class="kpi"><small>本月新聞分享</small><b>412</b><span class="small muted">次</span></div>
+  <div class="kpi"><small>問卷回覆率</small><b>64%</b><span class="small muted">35 / 55 份</span></div>
+</div>
+<section class="panel">
+  <header class="panel-h"><h2>業務員</h2><button class="btn small primary" data-act="toast" data-msg="示範：邀請業務員加入（需設定多因素驗證）">邀請業務員</button></header>
+  <div class="table-wrap"><table>
+    <thead><tr><th>業務員</th><th class="r">客戶數</th><th class="r">建議書分析</th><th class="r">問卷回覆</th><th>AI 額度使用</th></tr></thead>
+    <tbody>${TEAM.map(t=>`<tr><td><b>${t.name}</b></td><td class="r num">${t.clients}</td><td class="r num">${t.prop}</td><td class="r num">${t.q}</td><td><div style="display:flex;align-items:center;gap:10px"><div class="meter" style="flex:1"><i class="${t.ai>80?'hi':''}" style="width:${t.ai}%"></i></div><span class="num small muted">${t.ai}%</span></div></td></tr>`).join('')}</tbody>
+  </table></div>
+  <p class="small muted">管理者只看得到統計數字，看不到業務員個別客戶的健康資料。所有資料存取都有稽核紀錄。</p>
+</section>`;
+};
+
+/* ---------- Render ---------- */
+const TITLES={home:'今日',news:'新聞彙整',clients:'客戶',proposal:'建議書簡化',needs:'需求與媒合',products:'商品庫',partners:'合作保險公司',team:'業務員與用量'};
+function render(){
+ document.getElementById('navList').innerHTML=NAV[state.role].map(([k,t,i])=>`<li><button class="nav-btn" data-act="go" data-v="${k}" ${state.view===k?'aria-current="page"':''}>${ic(i,22)}<span>${t}</span></button></li>`).join('');
+ document.getElementById('pageTitle').textContent=TITLES[state.view];
+ document.getElementById('view').innerHTML=V[state.view]();
+ document.getElementById('app').classList.toggle('present',state.present);
+ document.getElementById('presentBanner').hidden=!state.present;
+ document.getElementById('presentBtn').innerHTML=`${ic('eye',18)}${state.present?'結束展示':'客戶展示模式'}`;
+ document.getElementById('presentBtn').hidden=state.role!=='agent'||state.present;
+ document.getElementById('roleSel').value=state.role;
+ if(state.view==='proposal'&&state.step===3)runStages();
+}
+function runStages(){
+ clearTimeout(stageTimer);
+ if(state.stage>=STAGES.length)return;
+ stageTimer=setTimeout(()=>{state.stage++;if(state.view==='proposal'&&state.step===3){document.getElementById('view').innerHTML=V.proposal();runStages()}},900);
+}
+let toastT;
+function toast(msg){
+ document.querySelectorAll('.toast').forEach(t=>t.remove());
+ const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=msg;document.body.appendChild(t);
+ clearTimeout(toastT);toastT=setTimeout(()=>t.remove(),2600);
+}
+function modal(html){
+ document.getElementById('overlay').innerHTML=`<div class="modal-bg" data-act="closeBg"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;
+ document.querySelector('.modal button')?.focus();
+}
+const closeModal=()=>{document.getElementById('overlay').innerHTML=''};
+
+const ACT={
+ go(d){state.view=d.v;if(d.step){state.step=+d.step;if(+d.step===3)state.stage=0}if(d.tab)state.needsTab=d.tab;render();scrollTo(0,0)},
+ client(d){state.view='clients';state.clientId=d.id;render();scrollTo(0,0)},
+ present(){state.present=!state.present;if(state.present&&state.role!=='agent')state.present=false;render()},
+ newsCat(d){state.newsCat=d.c;render()},
+ newsPreview(d){const n=NEWS.find(x=>x.id===d.id);modal(`
+  <div class="modal-h"><h2>客戶看到的分享卡片</h2><button class="icon-btn" data-act="close" aria-label="關閉">${ic('x',20)}</button></div>
+  <div class="line-card"><div class="lc-top">${n.title}</div><div class="lc-body"><p>${n.sum}</p>
+   ${n.invest?'<p class="disclaim">以上內容僅供參考，非投資建議。</p>':''}
+   <p class="lc-from">來源：${n.src}（點擊閱讀原文）<br>由 林子晴 · 示範保經 分享</p></div></div>
+  <p class="small muted">客戶版會自動拿掉「聊天切入點」等內部內容。</p>
+  <div class="panel-h"><button class="btn" data-act="copy" data-id="${n.id}">${ic('copy',16)}複製文字</button><button class="btn line" data-act="toast" data-msg="示範：開啟 LINE 分享">${ic('share',16)}分享到 LINE</button></div>`)},
+ copy(d){const n=NEWS.find(x=>x.id===d.id);const txt=`${n.title}\n${n.sum}${n.invest?'\n（僅供參考，非投資建議）':''}`;
+  navigator.clipboard?.writeText(txt).then(()=>toast('已複製'),()=>toast('無法存取剪貼簿，請手動選取文字複製'))??toast('無法存取剪貼簿')},
+ close:closeModal,
+ closeBg(d,e){if(e.target.classList.contains('modal-bg'))closeModal()},
+ toast(d){toast(d.msg)},
+ step(d){state.step=+d.s;if(state.step===3)state.stage=0;render();scrollTo(0,0)},
+ confirm(d,e){const i=+d.i;e.target.checked?state.confirmed.add(i):state.confirmed.delete(i);const y=scrollY;document.getElementById('view').innerHTML=V.proposal();scrollTo(0,y)},
+ needsTab(d){state.needsTab=d.t;render()},
+ prodFilter(d){state.prodFilter=d.f;render()},
+ star(d){const p=PRODUCTS[+d.i];p.star=!p.star;render();toast(p.star?`已將「${p.name}」設為主推`:`已取消主推`)},
+ partner(d){const p=PARTNERS[+d.i];p.on=!p.on;render();toast(`${p.co} ${p.on?'已開啟合作':'已關閉合作'}`)}
+};
+document.addEventListener('click',e=>{
+ const el=e.target.closest('[data-act]');if(!el)return;
+ if(el.type==='checkbox'&&el.dataset.act!=='confirm')return;
+ const f=ACT[el.dataset.act];if(f){f(el.dataset,e)}
+});
+document.addEventListener('input',e=>{
+ if(e.target.id==='clientSearch'){state.clientQ=e.target.value;const pos=e.target.selectionStart;render();const s=document.getElementById('clientSearch');s.focus();s.setSelectionRange(pos,pos)}
+ if(e.target.id==='qBud')document.getElementById('qBudV').textContent=fmt(+e.target.value);
+});
+document.addEventListener('submit',e=>{e.preventDefault();if(e.target.id==='custForm')toast('示範：問卷已送出，業務員會收到通知')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+document.getElementById('roleSel').addEventListener('change',e=>{state.role=e.target.value;state.present=false;state.view=NAV[state.role][0][0];render()});
+render();
+</script>
