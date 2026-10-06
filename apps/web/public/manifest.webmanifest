@@ -1,0 +1,10 @@
+{
+  "name": "業務員 AI 工作台",
+  "short_name": "AI 工作台",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EDF1F0",
+  "theme_color": "#0E5961",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
